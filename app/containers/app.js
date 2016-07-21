@@ -20,7 +20,6 @@ const CARD_MARGIN =10
 const SWIPE_THRESHOLD = 120;
 const OFFSCREEN_DISTANCE = 500;
 
-
 const {height, width} = Dimensions.get('window');
 
 const People = [
