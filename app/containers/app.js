@@ -39,55 +39,67 @@ export default class tinderClone extends Component {
       nextPerson: 1
     }
 
-    this._panResponder = PanResponder.create({
+    this.navPanResponder = PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onPanResponderMove: Animated.event([null,{
         dx: this.state.pan.x,
         dy: this.state.pan.y
       }]),
       onPanResponderRelease : (e, {vx, vy, dy, dx}) => {
-        let absX = Math.abs(vx)
-        let absDx = Math.abs(dx)
-        let velocityX = 0
-        let directionX = 0
 
-        if (absDx > SWIPE_THRESHOLD) {
-          if (dx < 0) { //if the user has swiped left
-            velocityX = Math.max(1,absX) * -1 // *-1 because it's in the negative direction
-            directionX = -1
-          } else { // the user has swiped right
-            velocityX = Math.max(1,vx) // no need to get absolute nuumber becuase the direction is positive
-            directionX = 1
-          }
+      }
+    })
 
-          let destinationY = (absX > 0) ? ((OFFSCREEN_DISTANCE/absX)*vy) : 0 // calculate y ending position if it has velocity
 
-          Animated.timing(this.state.pan,{ // spring off screen
-            toValue:{x:directionX*OFFSCREEN_DISTANCE,y:(destinationY+ dy)},
-            duration: 220
-          }).start(this.nextPerson.bind(this));
+    this.cardPanResponder = PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderMove: Animated.event([null,{
+        dx: this.state.pan.x,
+        dy: this.state.pan.y
+      }]),
+      onPanResponderRelease : (e, {vx, vy, dy, dx}) => {
 
-        } else { // spring back to center
-          Animated.spring(this.state.pan,{
-            toValue:{x:0,y:0},
-            friction: 4.5,
-          }).start();          
+        if (Math.abs(dx) > SWIPE_THRESHOLD) {
+          this.swipeCardOffscreen(dx, vx, vy, dy)
+        } else {
+          this.reCenterCard()
         }
       }
     })
   }
 
-  nextPerson() {
+  swipeCardOffscreen(dx, vx, vy, dy) {
+
+    let absVx = Math.abs(vx)
+    let absDx = Math.abs(dx)
+    let directionX = absDx/dx
+
+    let destinationY = (absVx > 0) ? ((OFFSCREEN_DISTANCE/absVx)*vy) : 0 // calculate y ending position if it has velocity
+
+    Animated.timing(this.state.pan,{ // spring off screen
+      toValue:{x:directionX*OFFSCREEN_DISTANCE,y:(destinationY+ dy)},
+      duration: 220
+    }).start(this.nextCard.bind(this));
+  }
+
+  reCenterCard() {
+    Animated.spring(this.state.pan,{
+      toValue:{x:0,y:0},
+      friction: 4.5,
+    }).start();    
+  }
+
+  nextCard() {
+    const {currentPerson, nextPerson} = this.state
     this.setState({
-      currentPerson: this.state.currentPerson >= (People.length -1) ? 0 : this.state.currentPerson + 1
+      currentPerson: currentPerson >= (People.length -1) ? 0 : currentPerson + 1
     })
     setTimeout(() => {
       this.setState({
-        nextPerson: this.state.nextPerson >= (People.length -1) ? 0 : this.state.nextPerson + 1
+        nextPerson: nextPerson >= (People.length -1) ? 0 : nextPerson + 1
       })
       this.state.pan.setValue({x: 0, y: 0});
     }, 50);
-    
   }
 
   render() {
@@ -95,8 +107,6 @@ export default class tinderClone extends Component {
     let currentPerson = this.state.currentPerson
 
     let nextPerson = this.state.nextPerson
-
-    console.log(this._panResponder)
 
     return (
       <View style={styles.container}>     
@@ -108,7 +118,7 @@ export default class tinderClone extends Component {
           age = {People[nextPerson].age}
           bio = {People[nextPerson].bio} />
         <AnimatedCard
-          panHandlers = {this._panResponder.panHandlers}
+          panHandlers = {this.cardPanResponder.panHandlers}
           pan = {this.state.pan}
           imageUrl = {People[currentPerson].profile}
           name = {People[currentPerson].name}
