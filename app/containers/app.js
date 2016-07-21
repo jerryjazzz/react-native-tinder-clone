@@ -12,6 +12,7 @@ import {
   PanResponder,
   Image,
   Dimensions,
+  ScrollView
 } from 'react-native';
 
 import {AnimatedCard, StaticCard} from '../components/cards'
@@ -34,31 +35,29 @@ export default class tinderClone extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      pan : new Animated.ValueXY(),
+      cardPan : new Animated.ValueXY(),
+      viewPan : new Animated.Value(0),
       currentPerson: 0,
-      nextPerson: 1
+      nextPerson: 1,
     }
 
-    this.navPanResponder = PanResponder.create({
+    this.viewPanResponder = PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onPanResponderMove: Animated.event([null,{
-        dx: this.state.pan.x,
-        dy: this.state.pan.y
+        dx: this.state.viewPan,
       }]),
       onPanResponderRelease : (e, {vx, vy, dy, dx}) => {
-
+        console.log('released scroller')
       }
     })
-
 
     this.cardPanResponder = PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onPanResponderMove: Animated.event([null,{
-        dx: this.state.pan.x,
-        dy: this.state.pan.y
+        dx: this.state.cardPan.x,
+        dy: this.state.cardPan.y
       }]),
       onPanResponderRelease : (e, {vx, vy, dy, dx}) => {
-
         if (Math.abs(dx) > SWIPE_THRESHOLD) {
           this.swipeCardOffscreen(dx, vx, vy, dy)
         } else {
@@ -76,14 +75,14 @@ export default class tinderClone extends Component {
 
     let destinationY = (absVx > 0) ? ((OFFSCREEN_DISTANCE/absVx)*vy) : 0 // calculate y ending position if it has velocity
 
-    Animated.timing(this.state.pan,{ // spring off screen
+    Animated.timing(this.state.cardPan,{ // spring off screen
       toValue:{x:directionX*OFFSCREEN_DISTANCE,y:(destinationY+ dy)},
       duration: 220
     }).start(this.nextCard.bind(this));
   }
 
   reCenterCard() {
-    Animated.spring(this.state.pan,{
+    Animated.spring(this.state.cardPan,{
       toValue:{x:0,y:0},
       friction: 4.5,
     }).start();    
@@ -98,8 +97,12 @@ export default class tinderClone extends Component {
       this.setState({
         nextPerson: nextPerson >= (People.length -1) ? 0 : nextPerson + 1
       })
-      this.state.pan.setValue({x: 0, y: 0});
+      this.state.cardPan.setValue({x: 0, y: 0});
     }, 50);
+  }
+
+  handleScroll(e) {
+    console.log(e.nativeEvent)
   }
 
   render() {
@@ -108,24 +111,33 @@ export default class tinderClone extends Component {
 
     let nextPerson = this.state.nextPerson
 
+
     return (
-      <View style={styles.container}>     
-        <View style={styles.header}>
-        </View> 
-        <StaticCard
-          imageUrl = {People[nextPerson].profile}
-          name = {People[nextPerson].name}
-          age = {People[nextPerson].age}
-          bio = {People[nextPerson].bio} />
-        <AnimatedCard
-          panHandlers = {this.cardPanResponder.panHandlers}
-          pan = {this.state.pan}
-          imageUrl = {People[currentPerson].profile}
-          name = {People[currentPerson].name}
-          age = {People[currentPerson].age}
-          bio = {People[currentPerson].bio} />
-        <View style={{height:100}}>
-        </View>
+      <View style={styles.container}> 
+        <Animated.View
+          style={[{transform:[{translateX: this.state.viewPan}]}]}
+          {...this.viewPanResponder.panHandlers}>
+          <View style={{width: width, height: 40}}>
+          </View>
+          <View style={styles.cardView}>
+            <View style={styles.header}>
+            </View> 
+            <StaticCard
+              imageUrl = {People[nextPerson].profile}
+              name = {People[nextPerson].name}
+              age = {People[nextPerson].age}
+              bio = {People[nextPerson].bio} />
+            <AnimatedCard
+              panHandlers = {this.cardPanResponder.panHandlers}
+              pan = {this.state.cardPan}
+              imageUrl = {People[currentPerson].profile}
+              name = {People[currentPerson].name}
+              age = {People[currentPerson].age}
+              bio = {People[currentPerson].bio} />
+            <View style={{flex: 1}}>
+            </View>
+          </View>
+        </Animated.View>
       </View>
     );
   }
@@ -133,82 +145,17 @@ export default class tinderClone extends Component {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    // justifyContent: 'center',
-    // alignItems: 'center',
-    backgroundColor: '#F6F7F9',
-  },
-  card: {
-    // flex:1,
+    flex:1,
     backgroundColor: 'white',
-    // overflow: 'hidden',
-    // alignItems: 'center',
-    margin: CARD_MARGIN,
-    borderColor: '#E8E8E8',
-    // borderColor: 'transparent',
-    borderWidth: 1,
-    borderRadius: 8,
-
-    shadowColor: "#000000",
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    shadowOffset: {
-      height: 1,
-      width: 0
-    },
+  },
+  scroll: {
   },
   header:{
+    // flex: 1,
     height: 60
   },
-  cardName: {
-    color: '#2B2B2B',
-    fontFamily: 'HelveticaNeue-medium',
-    fontSize: 20
-  },
-  cardBio: {
-    color: '#A4A4A4',
-    fontFamily: 'HelveticaNeue',
-    fontSize: 15
-  },
-  cardTextContainer: {
-    flex:1,
-    // backgroundColor:'red',
-    justifyContent:'center',
-    margin: 20
-  },
-  cardImageContainer: {
+  cardView: {
     // flex:1,
-    overflow: 'hidden',
-    // backgroundColor:'red',
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
-
-  },
-  cardImage: {
-    width:400,
-    height: 400,
-    alignSelf: 'center',
-  },
-  nope: {
-    width: 167,
-    height: 96
-  },
-  nopeContainer: {
-    position: 'absolute',
-    top: 10,
-    left: width-(CARD_MARGIN*2)-167-10,
-    right: 0,
-    bottom: 0,
-  },
-  like: {
-    width: 143,
-    height:89
-  },
-  likeContainer: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    right: 0,
-    bottom: 0,
+    backgroundColor: '#F6F7F9'
   }
 });

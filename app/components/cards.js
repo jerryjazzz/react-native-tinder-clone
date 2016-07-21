@@ -91,6 +91,7 @@ export class StaticCard extends Component {
 
 const styles = StyleSheet.create({
   card: {
+    width: CARD_WIDTH,
     backgroundColor: 'white',
     margin: CARD_MARGIN,
     borderColor: '#E8E8E8',
