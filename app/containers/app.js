@@ -12,16 +12,27 @@ import {
   PanResponder,
   Image,
   Dimensions,
-  ScrollView
+  ScrollView,
+  TouchableOpacity,
 } from 'react-native';
 
-import {AnimatedCard, StaticCard} from '../components/cards'
 
-const CARD_MARGIN =10
+import {AnimatedCard, StaticCard} from '../components/cards'
+import Icon from 'react-native-vector-icons/Ionicons';
+
+
+const AnimatedIcon = Animated.createAnimatedComponent(Icon);
+const {height, width} = Dimensions.get('window');
+
+const CARD_MARGIN = 10
 const SWIPE_THRESHOLD = 120;
 const OFFSCREEN_DISTANCE = 500;
+const NAV_BUTTON_WIDTH = 60;
+const HEADER_HEIGHT = 60;
+const RED = 'rgba(253,108,105,1)';
+const GREY = 'rgba(203,203,203,1)';
 
-const {height, width} = Dimensions.get('window');
+
 
 const People = [
   {profile: 'https://s32.postimg.org/3mpdee11h/Margot_8.jpg', name: 'Margot', age: 26, bio: 'Australian actress and hottie'},
@@ -36,28 +47,21 @@ export default class tinderClone extends Component {
     super(props)
     this.state = {
       cardPan : new Animated.ValueXY(),
-      viewPan : new Animated.Value(0),
       currentPerson: 0,
       nextPerson: 1,
+      scrollEnabled: true,
+      scrollValue: new Animated.Value(width),
     }
-
-    this.viewPanResponder = PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onPanResponderMove: Animated.event([null,{
-        dx: this.state.viewPan,
-      }]),
-      onPanResponderRelease : (e, {vx, vy, dy, dx}) => {
-        console.log('released scroller')
-      }
-    })
 
     this.cardPanResponder = PanResponder.create({
       onStartShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => this.setState({scrollEnabled: false}),
       onPanResponderMove: Animated.event([null,{
         dx: this.state.cardPan.x,
         dy: this.state.cardPan.y
       }]),
       onPanResponderRelease : (e, {vx, vy, dy, dx}) => {
+        this.setState({scrollEnabled: true})
         if (Math.abs(dx) > SWIPE_THRESHOLD) {
           this.swipeCardOffscreen(dx, vx, vy, dy)
         } else {
@@ -65,6 +69,14 @@ export default class tinderClone extends Component {
         }
       }
     })
+  }
+
+  componentDidMount() {
+    this.refs.scroller.scrollTo({x:width, y:0, animated:false})
+  }
+
+  setView(value) {
+    this.state.viewPan.setValue(value)
   }
 
   swipeCardOffscreen(dx, vx, vy, dy) {
@@ -101,9 +113,24 @@ export default class tinderClone extends Component {
     }, 50);
   }
 
-  handleScroll(e) {
-    console.log(e.nativeEvent)
-  }
+
+          // <Animated.View style={[styles.tab,{transform:[{translateX: iconPos2 }]}]}>         
+          //   <Icon
+          //     name={'logo-android'}
+          //     size={40}
+          //     color={'red'}
+          //     ref={1}
+          //   />
+          // </Animated.View>
+          // <Animated.View style={[styles.tab,{transform:[{translateX: iconPos3 }]}]}>         
+          //   <Icon
+          //     name={'logo-android'}
+          //     size={40}
+          //     color={'red'}
+          //     ref={1}
+          //   />
+          // </Animated.View>
+
 
   render() {
 
@@ -111,33 +138,135 @@ export default class tinderClone extends Component {
 
     let nextPerson = this.state.nextPerson
 
+    const iconPos = this.state.scrollValue.interpolate({inputRange: [0, width, 2*width], outputRange: [width/2- NAV_BUTTON_WIDTH/2,0, -width/2 + NAV_BUTTON_WIDTH/2 ]});
+    const iconPosTest = this.state.scrollValue.interpolate({inputRange: [0, width, 2*width], outputRange: [width/2- NAV_BUTTON_WIDTH/2,width, -width/2 + NAV_BUTTON_WIDTH/2 ]});
+    const iconColor = this.state.scrollValue.interpolate({
+            inputRange: [0, width],
+            outputRange: [RED,GREY],
+            extrapolate: 'clamp'
+          });
+    const iconColor2 = this.state.scrollValue.interpolate({
+            inputRange: [0, width, width*2],
+            outputRange: [GREY,RED,GREY],
+            extrapolate: 'clamp'
+          });
+    const iconColor3 = this.state.scrollValue.interpolate({
+            inputRange: [width, width*2],
+            outputRange: [GREY,RED],
+            extrapolate: 'clamp'
+          });
+
+    const iconSize = this.state.scrollValue.interpolate({
+            inputRange: [0, width],
+            outputRange: [1,.7],
+            extrapolate: 'clamp'
+          });
+    const iconSize2 = this.state.scrollValue.interpolate({
+            inputRange: [0, width, width*2],
+            outputRange: [.7,1,.7],
+            extrapolate: 'clamp'
+          });
+    const iconSize3 = this.state.scrollValue.interpolate({
+            inputRange: [width, width*2],
+            outputRange: [.7,1],
+            extrapolate: 'clamp'
+          });
+
+                  // <View style={{flex: 1}}>
+                  //   <TouchableOpacity
+                  //     onPress={()=> console.log('nope')}
+                  //     activeOpacity={.5}
+                  //     style={{transform:[{translateX: iconPos }]}}>
+                  //       <AnimatedIcon
+                  //         name={'logo-android'}
+                  //         size={40}
+                  //         ref={1}
+                  //         style={[styles.icon]}
+                  //       />
+                  //   </TouchableOpacity>
+                  // </View>
 
     return (
-      <View style={styles.container}> 
-        <Animated.View
-          style={[{transform:[{translateX: this.state.viewPan}]}]}
-          {...this.viewPanResponder.panHandlers}>
-          <View style={{width: width, height: 40}}>
-          </View>
-          <View style={styles.cardView}>
-            <View style={styles.header}>
-            </View> 
-            <StaticCard
-              imageUrl = {People[nextPerson].profile}
-              name = {People[nextPerson].name}
-              age = {People[nextPerson].age}
-              bio = {People[nextPerson].bio} />
-            <AnimatedCard
-              panHandlers = {this.cardPanResponder.panHandlers}
-              pan = {this.state.cardPan}
-              imageUrl = {People[currentPerson].profile}
-              name = {People[currentPerson].name}
-              age = {People[currentPerson].age}
-              bio = {People[currentPerson].bio} />
-            <View style={{flex: 1}}>
+        <View style={{flex: 1}}>
+          <Animated.View style={[styles.iconContainer,{transform:[{translateX: iconPos }]}]}>
+            <TouchableOpacity
+              onPress={()=>this.refs.scroller.scrollTo({x:0, y:0, animated:true})}
+              activeOpacity={.5}>
+                <AnimatedIcon
+                  name={'logo-android'}
+                  size={40}
+                  ref={1}
+                  style={[styles.icon, {color: iconColor},{transform:[{scale:iconSize}]}]}
+                />
+            </TouchableOpacity>
+            <AnimatedIcon
+              name={'logo-android'}
+              size={40}
+              color={'red'}
+              ref={2}
+              style={[styles.icon, {color: iconColor2},{transform:[{scale:iconSize2}]}]}
+              onPress={()=>this.refs.scroller.scrollTo({x:width, y:0, animated:true})}
+            />
+            <AnimatedIcon
+              name={'logo-android'}
+              size={40}
+              color={'red'}
+              ref={3}
+              style={[styles.icon, {color: iconColor3},{transform:[{scale:iconSize3}]}]}
+              onPress={()=>this.refs.scroller.scrollTo({x:width*2, y:0, animated:true})}
+            />
+          </Animated.View>
+
+          <ScrollView
+            ref='scroller'
+            style={styles.scroller}
+            horizontal={true}
+            automaticallyAdjustInsets={false}
+            scrollEnabled={this.state.scrollEnabled}
+            showsHorizontalScrollIndicator={false}
+            scrollEventThrottle={16}
+            pagingEnabled={true}
+            onScroll={Animated.event(
+              [{nativeEvent: {contentOffset: {x: this.state.scrollValue}}}]
+            )}
+            >
+            <View style={{flexDirection:'column'}}>
+
+              <View style={{flexDirection:'row'}}>
+                <View
+                  style={{height:height,width:width, backgroundColor:'yellow'}}/>
+                <View style={styles.cardView} tabLabel={'ios-list'}>
+                <TouchableOpacity
+                  onPress={()=> console.log('nope')}
+                  activeOpacity={.5}
+                  style={{transform:[{translateX: iconPos }]},{position:'absolute',top:510, left:0}}>
+                    <AnimatedIcon
+                      name={'logo-android'}
+                      size={40}
+                      ref={1}
+                      style={{}}
+                    />
+                </TouchableOpacity>
+                  <StaticCard
+                    imageUrl = {People[nextPerson].profile}
+                    name = {People[nextPerson].name}
+                    age = {People[nextPerson].age}
+                    bio = {People[nextPerson].bio} />
+                  <AnimatedCard
+                    panHandlers = {this.cardPanResponder.panHandlers}
+                    pan = {this.state.cardPan}
+                    imageUrl = {People[currentPerson].profile}
+                    name = {People[currentPerson].name}
+                    age = {People[currentPerson].age}
+                    bio = {People[currentPerson].bio} />
+
+                </View>
+                <View
+                  style={{width: width, height: height, backgroundColor:'green'}}/>
+              </View>
             </View>
-          </View>
-        </Animated.View>
+        </ScrollView>
+
       </View>
     );
   }
@@ -148,14 +277,46 @@ const styles = StyleSheet.create({
     flex:1,
     backgroundColor: 'white',
   },
-  scroll: {
+  scroller: {
+    flex:1,
+    // flexDirection: 'row',
+    // backgroundColor: 'red',
+    // width: width*3,
+    // height:height
   },
-  header:{
-    // flex: 1,
-    height: 60
+  content: {
+    // marginTop: 20,
+    // paddingHorizontal: width,
+    // alignItems: 'center',
+    flex: 1,
   },
   cardView: {
     // flex:1,
     backgroundColor: '#F6F7F9'
-  }
+  },
+  iconContainer: {
+    flexDirection: 'row',
+    // position:'absolute',
+    paddingTop: 20,
+    backgroundColor:'transparent',
+    width: width,
+    height:HEADER_HEIGHT,
+    alignItems:'center',
+    justifyContent:'space-between',
+    // backgroundColor:'blue'
+  },
+  icon: {
+    paddingLeft:15,
+    paddingRight:15,
+  },
+  header: {
+    height: HEADER_HEIGHT,
+    borderWidth: 1,
+    borderTopWidth: 0,
+    borderLeftWidth: 0,
+    borderRightWidth: 0,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+    backgroundColor:'red',
+    // position:'absolute'
+  },
 });

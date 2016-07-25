@@ -93,7 +93,9 @@ const styles = StyleSheet.create({
   card: {
     width: CARD_WIDTH,
     backgroundColor: 'white',
-    margin: CARD_MARGIN,
+    marginLeft:CARD_MARGIN,
+    marginRight: CARD_MARGIN,
+    margin:CARD_MARGIN,
     borderColor: '#E8E8E8',
     borderWidth: 1,
     borderRadius: 8,
