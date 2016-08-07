@@ -11,6 +11,7 @@ import {
 
 const {height, width} = Dimensions.get('window');
 const CARD_MARGIN =10
+const CARD_WIDTH = width - (CARD_MARGIN*2)
 
 export class AnimatedCard extends Component {
 
@@ -90,8 +91,11 @@ export class StaticCard extends Component {
 
 const styles = StyleSheet.create({
   card: {
+    width: CARD_WIDTH,
     backgroundColor: 'white',
-    margin: CARD_MARGIN,
+    marginLeft:CARD_MARGIN,
+    marginRight: CARD_MARGIN,
+    margin:CARD_MARGIN,
     borderColor: '#E8E8E8',
     borderWidth: 1,
     borderRadius: 8,
@@ -129,26 +133,24 @@ const styles = StyleSheet.create({
     fontSize: 15
   },
   nope: {
-    width: 167,
-    height: 96
+    width: 161,
+    height: 57
   },
   nopeContainer: {
     position: 'absolute',
-    top: 10,
-    left: width-(CARD_MARGIN*2)-167-10,
-    right: 0,
-    bottom: 0,
+    top: 30,
+    transform:[{rotate: '20deg'}],
+    left: CARD_WIDTH-161-10,
   },
   like: {
-    width: 143,
-    height:89
+    width: 134,
+    height:57
   },
   likeContainer: {
     position: 'absolute',
-    top: 10,
+    transform:[{rotate: '-20deg'}],
+    top: 30,
     left: 10,
-    right: 0,
-    bottom: 0,
   }
 
 })
